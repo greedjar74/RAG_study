@@ -5,7 +5,7 @@ import os
 os.environ['OPENAI_API_KEY'] = ''
 
 # Chroma DB 경로
-db_path = "./hong_curriculum_DB"
+db_path = "./Maze_DB"
 
 # Vectorstore 로드
 vectorstore = Chroma(
@@ -19,7 +19,7 @@ all_docs = vectorstore.get()['documents']
 # 출력
 print(f"저장된 문서 수: {len(all_docs)}\n")
 
-for i, doc in enumerate(all_docs[-1:-10:-1], 1):  # 처음 10개만 출력
+for i, doc in enumerate(all_docs[0:10], 1):  # 처음 10개만 출력
     print(f"--- 문서 {i} ---")
-    print(doc[:500])  # 500자까지 출력
+    print(doc[:1500])  # 500자까지 출력
     print()
