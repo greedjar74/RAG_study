@@ -1,7 +1,13 @@
 '''
-V7 기반 chatbot 
-- streamlit 사용
+# nowcoding 맞춤형 RAG 구축
+- gpt api 기반 (gpt-4.1-mini)
+- chroma db 사용
+- langchain 활용
+- 원하는 경우 사용자 입력을 DB에 저장할 수 있다.
+- DB 내용 확인 가능
+- 상당히 높은 정확도를 보인다.
 '''
+
 import streamlit as st
 import os
 import sys
@@ -80,7 +86,7 @@ def nowcoding_RAG():
         vectorstore.add_documents([doc])
         vectorstore.persist()
 
-    def store_ai_reply_to_chroma(user_input, assistant_reply):
+    def store_ai_reply_to_chroma(assistant_reply):
         conversation_text = f"assistant: {assistant_reply}"
         doc = Document(page_content=conversation_text)
         vectorstore.add_documents([doc])
@@ -150,7 +156,7 @@ def nowcoding_RAG():
 
     if "last_response" in st.session_state and st.button("💾 마지막 AI 응답을 Chroma DB에 저장하기"):
         try:
-            store_user_input_to_chroma(
+            store_ai_reply_to_chroma(
                 st.session_state.last_response
             )
             st.success("✅ 마지막 AI 응답을 Chroma DB에 저장되었습니다.")

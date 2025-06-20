@@ -19,6 +19,6 @@ def db_check():
     # 출력
     st.text(f"저장된 문서 수: {len(all_docs)}\n")
 
-    for i, doc in enumerate(all_docs[0:10], 1):  # 처음 10개만 출력
+    for i, doc in enumerate(all_docs, 1):
         st.text(f"--- 문서 {i} ---")
         st.text(doc[:1500])  # 500자까지 출력
