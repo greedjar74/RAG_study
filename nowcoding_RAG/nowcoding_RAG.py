@@ -28,6 +28,8 @@ def nowcoding_RAG():
         st.warning("사이드바에 API 키를 입력해주세요.")
         st.stop()
 
+    threshold = st.sidebar.slider(label='Threshold 설정', min_value=0.0, max_value=1.0, value=0.5, step=0.1)
+
     os.environ["OPENAI_API_KEY"] = api_key_input
     sys.stdout.reconfigure(encoding="utf-8")
 
@@ -79,13 +81,14 @@ def nowcoding_RAG():
     def format_docs(docs):
         return "\n\n".join(doc.page_content for doc in docs)
 
-    # 🔄 대화 저장 함수
+    # 사용자 입력 prompt 저장 함수
     def store_user_input_to_chroma(user_input):
         conversation_text = f"user: {user_input}"
         doc = Document(page_content=conversation_text)
         vectorstore.add_documents([doc])
         vectorstore.persist()
 
+    # AI 답변 저장 함수
     def store_ai_reply_to_chroma(assistant_reply):
         conversation_text = f"assistant: {assistant_reply}"
         doc = Document(page_content=conversation_text)
@@ -94,12 +97,21 @@ def nowcoding_RAG():
 
     # RAG 실행 함수
     def run_RAG(user_input, chat_history):
-        docs = retriever.invoke(user_input)
-        context = format_docs(docs)
+        # docs = retriever.invoke(user_input) # 유사도 점수 없음
+        docs_and_scores = retriever.vectorstore.similarity_search_with_score(user_input, k=5)
+        doc_list = []
+        score_list = []
+
+        for doc, score in docs_and_scores:
+            if abs(1-score) <= threshold: # 문서와 질문 간의 유사도 점수가 threshold 값보다 작은 경우 사용 -> 값이 작을수록 유사도가 높다는 의미
+                doc_list.append(doc)
+                score_list.append(abs(1-score))
+
+        context = format_docs(doc_list)
         conversation = '\n'.join(chat_history + [f'user: {user_input}'])
         prompt_text = prompt.format(context=context, question=conversation)
         response = llm.invoke(prompt_text)
-        return response.content, docs
+        return response.content, doc_list, score_list
 
     # 세션 상태 초기화
     if "chat_history" not in st.session_state:
@@ -123,15 +135,15 @@ def nowcoding_RAG():
 
         try:
             # 응답 생성
-            response_text, source_docs = run_RAG(user_input, [f'{m["role"]}: {m["content"]}' for m in st.session_state.chat_history])
+            response_text, source_docs, docs_scores = run_RAG(user_input, [f'{m["role"]}: {m["content"]}' for m in st.session_state.chat_history])
 
             # 응답 표시
             with st.chat_message("assistant"):
                 st.code(response_text, language='python')
 
                 with st.expander("📄 참고한 문서 내용 보기"):
-                    for i, doc in enumerate(source_docs, 1):
-                        st.text(f"**[{i}]** {doc.page_content.strip()[:500]}...")
+                    for i, doc in enumerate(source_docs[:2], 1):
+                        st.text(f"**[{i}]** {doc.page_content.strip()[:500]}... \n 유사도: {docs_scores[i-1]}") # 관련 문서 내용 및 유사도 출력
 
             # 대화 세션 저장 (UI용)
             st.session_state.chat_history.append({"role": "user", "content": user_input})
