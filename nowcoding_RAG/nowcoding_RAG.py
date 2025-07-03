@@ -142,7 +142,7 @@ def nowcoding_RAG():
                 st.code(response_text, language='python')
 
                 with st.expander("📄 참고한 문서 내용 보기"):
-                    for i, doc in enumerate(source_docs[:2], 1):
+                    for i, doc in enumerate(source_docs, 1):
                         st.text(f"**[{i}]** {doc.page_content.strip()[:500]}... \n 유사도: {docs_scores[i-1]}") # 관련 문서 내용 및 유사도 출력
 
             # 대화 세션 저장 (UI용)
