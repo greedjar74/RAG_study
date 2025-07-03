@@ -49,9 +49,19 @@ rag_chain = (
     | StrOutputParser()
 )
 
-answer = rag_chain.invoke("타일러 모형이 뭐야?")
-# print(answer)
+query = '타일러 모형이 뭐야?'
 
-# 한 문장씩 줄 바꿈 적용
+# 관련 문서 검색 및 출력
+related_docs = retriever.invoke(query)
+formatted_context = format_docs(related_docs)
+
+print("🔍 관련 문서:\n")
+print(formatted_context)
+print("\n🧠 답변:\n")
+
+# 답변 생성
+answer = rag_chain.invoke(query)
+
+# 한 문장씩 줄 바꿈 출력
 for sentence in answer.split('. '):
     print(sentence.strip())
