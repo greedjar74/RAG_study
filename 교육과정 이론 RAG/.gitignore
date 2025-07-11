@@ -8,3 +8,6 @@
 /curriculum_theory_DB
 /chat_history.db
 /hong_curriculum_DB
+/faiss_curriculum_index
+
+/__pycache__
