@@ -8,6 +8,22 @@
 - 상당히 높은 정확도를 보인다.
 '''
 
+'''
+# RAG 실행 과정
+1. 문서 업로드
+2. chunking
+3. 문서를 embedding vector로 변환
+4. vector DB에 저장
+5. DB 데이터 호출
+6. retriever로 변환
+7. 사용자 질문 입력 -> embedding vector로 변환
+8. 질문과 유사한 정보 검색
+9. 검색 결과와 질문, 대화 내역을 기반으로 prompt 완성
+10. prompt를 토크나이징
+11. LLM에게 prompt 전달
+12. 결과 반환
+'''
+
 import streamlit as st
 import os
 import sys
@@ -64,7 +80,7 @@ def rag_chatbot():
     prompt = PromptTemplate(
         input_variables=["context", "question"],
         template="""
-    너는 문서를 참고하여 답변을 생성한다. 최대한 정확한 답변을 생성하기 위해 문서를 꼼꼼히 확인한다.
+    너는 문서를 참고하여 답변을 생성한다.
 
     [문서 내용]
     {context}
