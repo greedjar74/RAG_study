@@ -5,3 +5,4 @@ PyPDF2
 langchain-community
 langchain_openai
 beautifulsoup4
+chromadb
