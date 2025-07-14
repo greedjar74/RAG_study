@@ -4,11 +4,10 @@ import sys
 import requests
 from bs4 import BeautifulSoup
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.vectorstores import Chroma
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain.schema import Document
 from langchain.prompts import PromptTemplate
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from sklearn.metrics.pairwise import cosine_similarity
-import numpy as np
 
 # 🔧 검색 + 크롤링
 def search_web(query, num_results=3, api_key=None):
@@ -24,10 +23,10 @@ def extract_text_from_url(url):
         soup = BeautifulSoup(response.text, "html.parser")
         for tag in soup(["script", "style"]): tag.decompose()
         return soup.get_text(separator="\n").strip()
-    except Exception:
+    except Exception as e:
         return ""
 
-# 🔧 문서 처리 및 벡터화 (Chroma 제거)
+# 🔧 문서 처리 및 벡터화
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
 
 def get_search_docs(query, embedding_model, serper_key, k=5):
@@ -38,35 +37,25 @@ def get_search_docs(query, embedding_model, serper_key, k=5):
         if text:
             chunks = text_splitter.split_text(text)
             docs.extend([Document(page_content=chunk, metadata={"source": url}) for chunk in chunks])
-
-    if not docs:
-        return None, []
-
-    texts = [doc.page_content for doc in docs]
-    embeddings = embedding_model.embed_documents(texts)
-
-    def simple_retriever(query):
-        query_vec = embedding_model.embed_query(query)
-        sims = cosine_similarity([query_vec], embeddings)[0]
-        top_indices = np.argsort(sims)[::-1][:k]
-        return [docs[i] for i in top_indices]
-
-    return simple_retriever, docs
+    if docs:
+        vectorstore = Chroma.from_documents(docs, embedding_model)
+        return vectorstore.as_retriever(search_kwargs={"k": k}), docs
+    return None, []
 
 # 🔧 RAG 수행
 def run_RAG(user_input, chat_history, serper_key):
-    embedding_model = OpenAIEmbeddings(model="text-embedding-3-small")
-    retriever_func, all_docs = get_search_docs(user_input, embedding_model, serper_key)
-    if not retriever_func:
+    retriever, all_docs = get_search_docs(user_input, OpenAIEmbeddings(model="text-embedding-3-small"), serper_key)
+    if not retriever:
         return "검색된 정보가 부족하여 답변할 수 없습니다.", [], []
 
-    docs = retriever_func(user_input)
+    docs = retriever.invoke(user_input)
     context = "\n\n".join(doc.page_content for doc in docs)
     conversation = "\n".join(chat_history + [f"user: {user_input}"])
 
     prompt_template = PromptTemplate(
         input_variables=["context", "question"],
-        template="""너는 문서를 참고하여 질문에 답변하는 AI 비서야.
+        template="""
+너는 문서를 참고하여 질문에 답변하는 AI 비서야.
 
 [문서 내용]
 {context}
@@ -129,7 +118,7 @@ def rag_chatbot():
                     with st.expander("📄 참고한 웹 문서"):
                         for i, (doc, src) in enumerate(zip(docs_used, sources), 1):
                             preview = doc.page_content[:300].replace("\n", " ")
-                            st.markdown(f"**[{i}]** [{src}]({src})\n\n`{preview}...`")
+                            st.markdown(f"**[{i}]** [{src}]({src})\n\n{preview}...")
 
                 st.session_state.chat_history.append({"role": "user", "content": user_input})
                 st.session_state.chat_history.append({"role": "assistant", "content": response_text})
