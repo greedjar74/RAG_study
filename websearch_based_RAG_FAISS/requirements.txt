@@ -7,3 +7,4 @@ langchain_openai
 beautifulsoup4
 chromadb
 faiss-cpu
+pypdf
