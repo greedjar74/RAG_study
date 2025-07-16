@@ -10,7 +10,7 @@ from langchain.schema import Document
 from langchain.prompts import PromptTemplate
 from pypdf import PdfReader
 
-st.set_page_config(page_title="기업 맞춤 면접 예상 질문", layout="centered")
+st.set_page_config(layout="centered")
 
 # 웹 검색 및 텍스트 추출
 def search_web(query, num_results=3, api_key=None):
@@ -110,7 +110,7 @@ def generate_follow_up_question(question, answer, llm_model):
 
 # Streamlit UI
 def rag_chatbot():
-    st.title("🤖 기업 맞춤 면접 예상 질문 챗봇")
+    st.title("스무디")
 
     # 세션 상태 초기화
     for key in ["questions", "current_q", "user_answers", "follow_ups", "docs_used", "sources"]:
