@@ -12,13 +12,14 @@ from pypdf import PdfReader
 
 st.set_page_config(layout="centered")
 
-# 웹 검색 및 텍스트 추출
+# query 관련 웹 검색
 def search_web(query, num_results=3, api_key=None):
     headers = {"X-API-KEY": api_key, "Content-Type": "application/json"}
     payload = {"q": query, "num": num_results}
     response = requests.post("https://google.serper.dev/search", json=payload, headers=headers)
     return [item["link"] for item in response.json().get("organic", [])]
 
+# 웹에서 텍스트 추출
 def extract_text_from_url(url):
     try:
         response = requests.get(url, timeout=5)
@@ -28,6 +29,7 @@ def extract_text_from_url(url):
     except Exception:
         return ""
 
+# pdf에서 텍스트 추출
 def extract_text_from_pdf(file):
     text = ""
     try:
@@ -149,6 +151,12 @@ def rag_chatbot():
 
             st.success("면접 예상 질문 생성 완료! 아래에서 시작하세요.")
             st.rerun()
+    
+    # 전체 질문 미리보기
+    if st.session_state.questions:
+        with st.expander("📋 생성된 전체 질문 목록 보기"):
+            for idx, question in enumerate(st.session_state.questions, 1):
+                st.markdown(f"**{idx}. {question}**")
 
     # 질문/응답 인터페이스
     if st.session_state.questions:
