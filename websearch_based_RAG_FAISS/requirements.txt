@@ -8,4 +8,4 @@ beautifulsoup4
 chromadb
 faiss-cpu
 pypdf
-PIL
+pillow
