@@ -8,7 +8,7 @@ def main_page():
     st.text('면접 절차 & 기출 질문을 준비하세요.')
     st.text('취업 성공을 기원합니다!')
     
-    image = Image.open('image.png')
+    image = Image.open('websearch_based_RAG_FAISS/image.png')
     st.image(image, caption="취업 성공을 기원합니다!")
 
 page_names_to_funcs = {"Main Page": main_page, 'chat-bot': rag_chatbot}
