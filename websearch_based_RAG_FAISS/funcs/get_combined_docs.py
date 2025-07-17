@@ -5,13 +5,14 @@ from langchain.vectorstores import FAISS
 from funcs.search_web import search_web
 from funcs.extract_text import extract_text_from_pdf, extract_text_from_url
 
-# 텍스트 분할기
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-
 # 문서 결합
 def get_combined_docs(company_name, pdf_file, embedding_model, serper_key, k=10):
+    # 텍스트 분할기
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    
     urls = search_web(f"{company_name} 면접 후기 질문 합격 팁", num_results=3, api_key=serper_key)
     docs = []
+    
     for url in urls:
         text = extract_text_from_url(url)
         if text:

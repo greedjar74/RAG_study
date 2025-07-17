@@ -1,16 +1,10 @@
 import streamlit as st
 import os
 import sys
-import requests
-from bs4 import BeautifulSoup
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import FAISS
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain.schema import Document
-from langchain.prompts import PromptTemplate
-from pypdf import PdfReader
 
-from funcs.get_combined_docs import get_combined_docs
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings
+
 from funcs.generate_interview_questions import generate_interview_questions
 
 st.set_page_config(layout="centered")
