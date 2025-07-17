@@ -1,98 +1,16 @@
 import streamlit as st
 import os
 import sys
-import requests
-from bs4 import BeautifulSoup
+
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import FAISS
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain.schema import Document
-from langchain.prompts import PromptTemplate
-from pypdf import PdfReader
+from langchain_openai import OpenAIEmbeddings
+
+from funcs.generate_interview_questions import generate_interview_questions
 
 st.set_page_config(layout="centered")
 
-# 웹 검색
-def search_web(query, num_results=3, api_key=None):
-    headers = {"X-API-KEY": api_key, "Content-Type": "application/json"}
-    payload = {"q": query, "num": num_results}
-    response = requests.post("https://google.serper.dev/search", json=payload, headers=headers)
-    return [item["link"] for item in response.json().get("organic", [])]
-
-# URL 텍스트 추출
-def extract_text_from_url(url):
-    try:
-        response = requests.get(url, timeout=5)
-        soup = BeautifulSoup(response.text, "html.parser")
-        for tag in soup(["script", "style"]): tag.decompose()
-        return soup.get_text(separator="\n").strip()
-    except Exception:
-        return ""
-
-# PDF 텍스트 추출
-def extract_text_from_pdf(file):
-    text = ""
-    try:
-        reader = PdfReader(file)
-        for page in reader.pages:
-            text += page.extract_text() or ""
-        return text
-    except Exception:
-        return ""
-
 # 텍스트 분할기
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-
-# 문서 결합
-def get_combined_docs(company_name, pdf_file, embedding_model, serper_key, k=10):
-    urls = search_web(f"{company_name} 면접 후기 질문 합격 팁", num_results=3, api_key=serper_key)
-    docs = []
-    for url in urls:
-        text = extract_text_from_url(url)
-        if text:
-            chunks = text_splitter.split_text(text)
-            docs.extend([Document(page_content=chunk, metadata={"source": url}) for chunk in chunks])
-
-    pdf_text = extract_text_from_pdf(pdf_file)
-    if pdf_text:
-        chunks = text_splitter.split_text(pdf_text)
-        docs.extend([Document(page_content=chunk, metadata={"source": "자기소개서"}) for chunk in chunks])
-
-    if docs:
-        vectorstore = FAISS.from_documents(docs, embedding_model)
-        retriever = vectorstore.as_retriever(search_kwargs={"k": k})
-        return retriever, docs
-    return None, []
-
-# 면접 질문 생성
-def generate_interview_questions(company_name, pdf_file, embedding_model, serper_key):
-    retriever, all_docs = get_combined_docs(company_name, pdf_file, embedding_model, serper_key)
-    if not retriever:
-        return "❌ 정보가 충분하지 않습니다.", [], []
-
-    query = f"{company_name} 기업 면접을 준비 중이야. 면접 예상 질문을 만들어줘."
-    docs = retriever.invoke(query)
-    context = "\n\n".join(doc.page_content for doc in docs)
-
-    prompt_template = PromptTemplate(
-        input_variables=["context", "question"],
-        template="""
-너는 인사담당자처럼 면접 질문을 만들어주는 AI야.
-
-[문서 내용]
-{context}
-
-[요청]
-{question}
-
-[면접 예상 질문]
-"""
-    )
-
-    prompt_text = prompt_template.format(context=context, question=query)
-    llm = ChatOpenAI(model="gpt-4.1-mini")
-    response = llm.invoke(prompt_text)
-    return response.content, docs, [doc.metadata.get("source", "출처 없음") for doc in docs]
 
 # Streamlit UI
 def rag_chatbot():
@@ -105,7 +23,7 @@ def rag_chatbot():
     # API 키 입력
     st.sidebar.header("🔐 API Key 설정")
     openai_key = st.sidebar.text_input("OpenAI API Key", type="password")
-    serper_key = st.sidebar.text_input("Serper.dev API Key", type="password")
+    serper_key = st.sidebar.text_input("Serper API Key", type="password")
 
     # 기본 정보 입력
     company_name = st.text_input("1️⃣ 지원할 기업명을 입력하세요", placeholder="예: 삼성전자, 카카오")
