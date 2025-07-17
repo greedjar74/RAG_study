@@ -12,14 +12,14 @@ from pypdf import PdfReader
 
 st.set_page_config(layout="centered")
 
-# query 관련 웹 검색
+# 웹 검색
 def search_web(query, num_results=3, api_key=None):
     headers = {"X-API-KEY": api_key, "Content-Type": "application/json"}
     payload = {"q": query, "num": num_results}
     response = requests.post("https://google.serper.dev/search", json=payload, headers=headers)
     return [item["link"] for item in response.json().get("organic", [])]
 
-# 웹에서 텍스트 추출
+# URL 텍스트 추출
 def extract_text_from_url(url):
     try:
         response = requests.get(url, timeout=5)
@@ -29,7 +29,7 @@ def extract_text_from_url(url):
     except Exception:
         return ""
 
-# pdf에서 텍스트 추출
+# PDF 텍스트 추출
 def extract_text_from_pdf(file):
     text = ""
     try:
@@ -43,7 +43,7 @@ def extract_text_from_pdf(file):
 # 텍스트 분할기
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
 
-# 웹 & PDF 기반 문서 결합
+# 문서 결합
 def get_combined_docs(company_name, pdf_file, embedding_model, serper_key, k=10):
     urls = search_web(f"{company_name} 면접 후기 질문 합격 팁", num_results=3, api_key=serper_key)
     docs = []
@@ -64,7 +64,7 @@ def get_combined_docs(company_name, pdf_file, embedding_model, serper_key, k=10)
         return retriever, docs
     return None, []
 
-# 예상 질문 생성용 RAG 실행
+# 면접 질문 생성
 def generate_interview_questions(company_name, pdf_file, embedding_model, serper_key):
     retriever, all_docs = get_combined_docs(company_name, pdf_file, embedding_model, serper_key)
     if not retriever:
@@ -94,28 +94,11 @@ def generate_interview_questions(company_name, pdf_file, embedding_model, serper
     response = llm.invoke(prompt_text)
     return response.content, docs, [doc.metadata.get("source", "출처 없음") for doc in docs]
 
-# 꼬리 질문 생성
-def generate_follow_up_question(question, answer, llm_model):
-    prompt = f"""
-너는 면접관이야.
-
-[이전 질문]
-{question}
-
-[지원자 답변]
-{answer}
-
-위의 답변을 바탕으로 추가적인 꼬리 질문 하나만 만들어줘.
-"""
-    response = llm_model.invoke(prompt)
-    return response.content.strip()
-
 # Streamlit UI
 def rag_chatbot():
     st.title("스무디")
 
-    # 세션 상태 초기화
-    for key in ["questions", "current_q", "user_answers", "follow_ups", "docs_used", "sources"]:
+    for key in ["questions", "current_q", "user_answers", "docs_used", "sources"]:
         if key not in st.session_state:
             st.session_state[key] = []
 
@@ -145,7 +128,6 @@ def rag_chatbot():
             st.session_state.questions = questions
             st.session_state.current_q = 0
             st.session_state.user_answers = []
-            st.session_state.follow_ups = []
             st.session_state.docs_used = docs_used
             st.session_state.sources = sources
 
@@ -171,28 +153,32 @@ def rag_chatbot():
             if st.button("➡️ 다음 질문으로"):
                 if answer.strip():
                     st.session_state.user_answers.append(answer.strip())
-
-                    # 꼬리 질문 생성
-                    llm = ChatOpenAI(model="gpt-4.1-mini")
-                    follow_up = generate_follow_up_question(curr_q, answer, llm)
-                    st.session_state.follow_ups.append(follow_up)
-
                     st.session_state.current_q += 1
                     st.rerun()
                 else:
                     st.warning("답변을 입력해주세요.")
 
+            # ✅ 이전 질문 및 답변 출력
+            if st.session_state.user_answers:
+                st.markdown("---")
+                st.markdown("### 📌 이전 질문 및 답변")
+                for i, (q, a) in enumerate(zip(
+                    st.session_state.questions[:curr_idx],
+                    st.session_state.user_answers
+                ), 1):
+                    st.markdown(f"**Q{i}: {q}**")
+                    st.markdown(f"🗣 **답변:** {a}")
+                    st.markdown("---")
+
         else:
             st.success("🎉 모든 질문에 답변하셨습니다!")
 
-            for i, (q, a, f) in enumerate(zip(
+            for i, (q, a) in enumerate(zip(
                 st.session_state.questions,
-                st.session_state.user_answers,
-                st.session_state.follow_ups
+                st.session_state.user_answers
             ), 1):
                 st.markdown(f"---\n**Q{i}: {q}**")
                 st.markdown(f"🗣 **답변:** {a}")
-                st.markdown(f"🔁 **꼬리 질문:** {f}")
 
             with st.expander("📄 참고 문서 보기"):
                 for i, (doc, src) in enumerate(zip(st.session_state.docs_used, st.session_state.sources), 1):
