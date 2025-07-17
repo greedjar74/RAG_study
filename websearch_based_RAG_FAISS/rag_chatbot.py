@@ -1,10 +1,16 @@
 import streamlit as st
 import os
 import sys
-
+import requests
+from bs4 import BeautifulSoup
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_openai import OpenAIEmbeddings
+from langchain.vectorstores import FAISS
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from langchain.schema import Document
+from langchain.prompts import PromptTemplate
+from pypdf import PdfReader
 
+from funcs.get_combined_docs import get_combined_docs
 from funcs.generate_interview_questions import generate_interview_questions
 
 st.set_page_config(layout="centered")
@@ -23,7 +29,7 @@ def rag_chatbot():
     # API 키 입력
     st.sidebar.header("🔐 API Key 설정")
     openai_key = st.sidebar.text_input("OpenAI API Key", type="password")
-    serper_key = st.sidebar.text_input("Serper API Key", type="password")
+    serper_key = st.sidebar.text_input("Serper.dev API Key", type="password")
 
     # 기본 정보 입력
     company_name = st.text_input("1️⃣ 지원할 기업명을 입력하세요", placeholder="예: 삼성전자, 카카오")

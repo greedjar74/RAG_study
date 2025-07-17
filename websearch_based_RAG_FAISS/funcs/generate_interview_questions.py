@@ -8,10 +8,7 @@ from funcs.get_combined_docs import get_combined_docs
 
 # 면접 질문 생성
 def generate_interview_questions(company_name, pdf_file, embedding_model, serper_key):
-    all_docs = get_combined_docs(company_name, pdf_file, embedding_model, serper_key) # 웹 서칭, 문서 데이터 반환
-
-    vectorstore = FAISS.from_documents(all_docs, embedding_model) # vectorstore 생성
-    retriever = vectorstore.as_retriever(search_kwargs={"k": 10}) # retriever 생성
+    retriever, all_docs = get_combined_docs(company_name, pdf_file, embedding_model, serper_key)
 
     if not retriever:
         return "❌ 정보가 충분하지 않습니다.", [], []
