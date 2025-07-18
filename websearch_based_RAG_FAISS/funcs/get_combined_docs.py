@@ -10,7 +10,7 @@ def get_combined_docs(company_name, pdf_file, embedding_model, serper_key, k=10)
     # 텍스트 분할기
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     
-    urls = search_web(f"{company_name} 면접 후기 질문 합격 팁", num_results=3, api_key=serper_key)
+    urls = search_web(f"{company_name} 면접 후기 질문 합격 팁", num_results=5, api_key=serper_key)
     docs = []
     
     for url in urls:
