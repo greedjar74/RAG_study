@@ -4,7 +4,7 @@
 import requests
 
 # 웹 검색
-def search_web(query, num_results=3, api_key=None):
+def search_web(query, num_results=5, api_key=None):
     headers = {"X-API-KEY": api_key, "Content-Type": "application/json"}
     payload = {"q": query, "num": num_results}
     response = requests.post("https://google.serper.dev/search", json=payload, headers=headers)
