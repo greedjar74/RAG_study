@@ -15,7 +15,7 @@ def generate_interview_questions(company_name, pdf_file, embedding_model, serper
 
     question = f"{company_name} 기업 면접을 준비 중이야. 면접 예상 질문을 만들어줘." # 입력한 기업 이름을 기반으로 질문 완성
     docs = retriever.invoke(question) # 관련 문서 탐색
-    context = "\n\n".join(doc.page_content for doc in docs) # 찾은 문서를 하나의 문자열으로 만들어준다.
+    context = "\n\n".join(f"[출처: {doc.metadata.get('source', '출처없음')}] \n {doc.page_content}" for doc in docs) # 찾은 문서를 하나의 문자열으로 만들어준다.
 
     # prompt template 설정
     prompt_template = PromptTemplate(
