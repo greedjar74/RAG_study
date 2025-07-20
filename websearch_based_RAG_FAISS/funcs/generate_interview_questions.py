@@ -22,6 +22,7 @@ def generate_interview_questions(company_name, pdf_file, embedding_model, serper
         input_variables=["context", "question"],
         template="""
 너는 인사담당자처럼 면접 질문을 만들어주는 AI야.
+면접 예상 질문은 비슷한 내용끼리 묶어서 차례대로 만들어야해.
 
 [문서 내용]
 {context}
